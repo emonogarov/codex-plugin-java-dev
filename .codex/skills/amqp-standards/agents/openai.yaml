@@ -1,0 +1,6 @@
+interface:
+  display_name: "AMQP Standards"
+  short_description: "Apply canonical AMQP standards for RabbitMQ naming, contracts, topology, payloads, and operations across docs, code, and reviews."
+  default_prompt: "Use $amqp-standards to apply canonical AMQP standards to messaging design, code, configuration, or documentation."
+policy:
+  allow_implicit_invocation: true

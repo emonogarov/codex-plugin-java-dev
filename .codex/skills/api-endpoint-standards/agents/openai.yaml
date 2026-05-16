@@ -1,0 +1,6 @@
+interface:
+  display_name: "API Endpoint Standards"
+  short_description: "Apply canonical API path, access-type, versioning, gateway, and OpenAPI security standards across docs, code, and reviews."
+  default_prompt: "Use $api-endpoint-standards to apply canonical HTTP API endpoint and OpenAPI standards."
+policy:
+  allow_implicit_invocation: true
