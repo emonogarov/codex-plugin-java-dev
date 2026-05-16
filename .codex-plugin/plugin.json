@@ -1,0 +1,34 @@
+{
+  "name": "segterra-dev-plugin",
+  "version": "0.1.0",
+  "description": "Private Segterra development plugin for internal engineering workflows.",
+  "author": {
+    "name": "Eduard Monogarov"
+  },
+  "license": "UNLICENSED",
+  "keywords": [
+    "segterra",
+    "private",
+    "development",
+    "engineering"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Segterra Dev Plugin",
+    "shortDescription": "Private Segterra development plugin.",
+    "longDescription": "Private plugin for Segterra internal development workflows and project-specific guidance.",
+    "developerName": "Segterra",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Review this project using Segterra development guidance.",
+      "Apply Segterra development guidance to this change.",
+      "Check this implementation against Segterra project conventions.",
+      "Suggest improvements to this code based on Segterra development best practices."
+    ],
+    "brandColor": "#0F766E"
+  }
+}
