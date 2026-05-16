@@ -19,6 +19,13 @@ description: Canonical AMQP messaging standards for services, code, configuratio
 - Use maintained, stable client libraries for the implementation language.
 - Do not break existing consumers within a major version.
 
+### Compatibility rules
+
+- Treat adding optional JSON fields as non-breaking within the same major version.
+- Treat removing fields, renaming fields, or changing field types as breaking changes.
+- Treat changing routing key meaning, event meaning, or command meaning as breaking changes.
+- Treat reusing an existing routing key for different semantics as a breaking change.
+
 ## Topology and naming
 
 - Use lowercase names only.
@@ -27,13 +34,14 @@ description: Canonical AMQP messaging standards for services, code, configuratio
 
 ### Exchange naming
 
-- Shape: `{service}.{domain}.{exchangePurpose}[.{version}]`
+- Shape: `{service}.{domain}.{exchangeCategory}.v{major}`
 - `service`: owning service that creates and manages the exchange.
 - `domain`: business domain or bounded context.
-- `exchangePurpose`: plural noun for the stream purpose.
-- Use `events` for event streams published by the owning service.
-- Use `commands` for command streams published toward other services.
-- Add `version` only when the exchange contract breaks.
+- `exchangeCategory`: message category (`events` or `commands`).
+   - `events` for event streams published by the owning service.
+   - `commands` for command streams published toward other services.
+- Use a mandatory major version suffix on exchanges: `.v{major}`.
+- Increment the exchange major version when the exchange contract breaks.
 
 Examples:
 
@@ -43,22 +51,17 @@ Examples:
 
 ### Queue naming
 
-- Shape: `{service}.{domain}.{queuePurpose}.v{major}[.dlq|.retry]`
+- Shape: `{service}.{domain}.{queuePurpose}.v{major}`
 - `service`: owning consumer service and queue owner.
 - `domain`: business domain or bounded context.
-- `queuePurpose`: noun for the consumer responsibility.
-- Use `events` for queues that consume events from other services.
-- Use `commands` for queues that consume commands from other services.
-- Use `.retry` for retry queues when unordered retries are needed so the main queue is not blocked.
-- Use `.dlq` for dead-letter queues.
+- `queuePurpose`: message category (`events` or `commands`).
+  - `events` for queues that consume events from other services.
+  - `commands` for queues that consume commands from other services.
 
 Examples:
 
 - `processor.orders.events.v1`
-- `processor.orders.events.v1.dlq`
 - `notifications.push.commands.v2`
-- `notifications.push.commands.v2.retry`
-- `notifications.push.commands.v2.dlq`
 
 ### Routing keys
 
@@ -70,16 +73,16 @@ Examples:
 - `billing.invoice.paid.v2`
 - `push.notification.send.v2`
 
-### Binding naming
+### Binding documentation
 
-- Document bindings with the stable identifier shape `{exchange}->{queue}:{routingKey}`.
+- When documenting bindings in specs, diagrams, or reviews, use the identifier shape `{exchange}->{queue}:{routingKey}`.
 - Always list the explicit routing key when documenting a binding.
 - If multiple routing keys are bound, document one line per binding.
 
 Examples:
 
-- `order.orders.events.v1 -> processor.orders.events.v1 : orders.order.created.v1`
-- `notifications.push.commands.v2 -> notifications.push.commands.v2 : push.notification.send.v2`
+- `order.orders.events.v1->processor.orders.events.v1:orders.order.created.v1`
+- `notifications.push.commands.v2->notifications.push.commands.v2:push.notification.send.v2`
 
 ### Queue ownership
 
@@ -98,13 +101,31 @@ Examples:
 
 - Use durable exchanges and durable queues for production traffic.
 - Use auto-delete queues only for short-lived consumers and tests.
+
+### Dead-letter mechanism
+
 - Use a dead-letter exchange for every durable queue.
+- Name dead-letter exchanges with the `.dlx` suffix: `{service}.{domain}.{exchangeCategory}.v{major}.dlx`.
+- Name dead-letter queues with the `.dlq` suffix: `{service}.{domain}.{queuePurpose}.v{major}.dlq`.
+
+Exchange examples:
+
+- `order.orders.events.v1.dlx`
+- `notifications.push.commands.v2.dlx`
+
+Queue examples:
+
+- `processor.orders.events.v1.dlq`
+- `notifications.push.commands.v2.dlq`
 
 ## Message envelope
 
 ### Headers
 
-- No required custom headers are defined here.
+- Require `messageId` for cross-service messages.
+- Require `correlationId` when the message is part of a request, workflow, or causal chain.
+- These headers may be added manually by the producer or automatically by observability or messaging tooling such as DataDog instrumentation.
+- The developer remains responsible for ensuring the required headers exist regardless of whether they are added by application code or tooling.
 - Standard library or platform metadata may be present.
 - Optional Spring AMQP headers may include `__TypeId__`, `__ContentTypeId__`, and `__KeyTypeId__`.
 
@@ -122,11 +143,12 @@ Examples:
 ## Operational limits
 
 - Keep message size at or below 256 KB unless explicit approval exists.
-- Use prefetch `10` by default unless workload behavior requires a different value.
+- Use prefetch `10` as the starting default.
+- Increase or decrease prefetch based on handler latency, memory usage, ordering sensitivity, and consumer concurrency.
 
 ## Working rules
 
 - For new designs and new implementations, follow this standard directly.
-- For reviews, flag deviations in naming, routing, ownership, compatibility, payload shape, exchange type, retry handling, or queue durability.
+- For reviews, flag deviations in naming, routing, ownership, compatibility, payload shape, exchange type, or queue durability.
 - For contract-breaking changes, version the affected exchange, queue contract, or routing key major version instead of silently changing semantics.
 - For documentation, include exchange, queue, routing key, binding, and payload details when they are relevant to the scope.
